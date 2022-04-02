@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind screens;
+@tailwind utilities;
+
+html, body {
+    overflow: hidden;
+}
+
+* {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+body {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 24px;
+    font-size: clamp(0.75rem, min(5vw, 5vh), 4rem);
+    line-height: 1.5;
+
+    button {
+        @apply transition-all ease-in-out duration-75;
+        &:hover {
+            @apply scale-110;
+        }
+    }
+}
+canvas {
+    margin: auto;
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*right: 0;*/
+    /*bottom: 0;*/
+    /*left: 0;*/
+}
+
+button {
+    @apply bg-blue-500 hover:bg-blue-700 text-white m-2 p-2 rounded;
+}
+
+#ui {
+    zoom: calc(100% / 100vw);
+}
