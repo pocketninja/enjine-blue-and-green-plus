@@ -16,6 +16,7 @@ import MovingStarSystem from "../Systems/MovingStarSystem";
 import {addListener} from "enjine/src/js/enjine/events";
 import InputManager, {INPUT_CODES} from "enjine/src/js/enjine/managers/InputManager";
 import SquareRendererComponent from "enjine/src/js/enjine/components/renderer-components/SquareRendererComponent";
+import {createTile} from "../entity-helpers";
 
 export default class BlueAndGreenPlusGame extends Game {
 
@@ -135,36 +136,6 @@ export default class BlueAndGreenPlusGame extends Game {
         }
     }
 
-    /**
-     * Create a tile for the given coordinate
-     * @param x
-     * @param y
-     * @returns {*}
-     */
-    #createTile(x, y) {
-        const tile = this.world.createNewEntity(
-            new TransformComponent,
-            new ImageRendererComponent('./assets/none.png'),
-            new TileComponent,
-        );
-
-        /** @type {TransformComponent} */
-        const transform = tile.getComponent(TransformComponent);
-        transform.position.x = x;
-        transform.position.y = y;
-
-        /** @type {ImageRendererComponent} */
-        const renderer = tile.getComponent(ImageRendererComponent);
-        renderer.color = DefaultTileColor;
-        renderer.radius = FullTileSize - TileMargin;
-
-        //set the initial sizes with a subtle zoom effect thanks to TileSystem...
-        transform.scale.x = 0;
-        transform.scale.y = 0;
-
-        return tile;
-    }
-
     #createWorld() {
         const world = new World();
 
@@ -229,27 +200,27 @@ export default class BlueAndGreenPlusGame extends Game {
 
         //top row
         coord = [-FullTileSize, FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [0, FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [FullTileSize, FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
 
         //middle row
         coord = [-FullTileSize, 0];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [0, 0];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [FullTileSize, 0];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
 
         //bottom row
         coord = [-FullTileSize, -FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [0, -FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
         coord = [FullTileSize, -FullTileSize];
-        this.tiles[coord.join(',')] = this.#createTile(...coord);
+        this.tiles[coord.join(',')] = createTile(this.world, ...coord);
 
         //now create indexed entries for the existing tiles (this helps with win checks later)
         let index = 0;
