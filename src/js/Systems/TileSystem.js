@@ -3,7 +3,7 @@ import Query from "enjine/src/js/enjine/ecs/Query";
 import TransformComponent from "enjine/src/js/enjine/components/TransformComponent";
 import TileComponent from "../Components/TileComponent";
 import ImageRendererComponent from "enjine/src/js/enjine/components/renderer-components/ImageRendererComponent";
-import {FullSizeScale, HoverScale, TakenScale} from "../defines";
+import {TileMarkerFullSizeScale, TileMarkerHoverScale, TileMarkerTakenScale} from "../defines";
 import {addListener} from "enjine/src/js/enjine/events";
 import {lerp} from "enjine/src/js/enjine/math";
 
@@ -24,11 +24,11 @@ export default class TileSystem extends System {
                 const transform = entity.getComponent(TransformComponent);
 
                 let targetScale = tile.hovered
-                    ? HoverScale
-                    : FullSizeScale;
+                    ? TileMarkerHoverScale
+                    : TileMarkerFullSizeScale;
 
                 if (tile.ownedBy !== -1) {
-                    targetScale = TakenScale;
+                    targetScale = TileMarkerTakenScale;
                 }
 
                 targetScale = lerp(transform.scale.x, targetScale, delta * this.animationSpeed);

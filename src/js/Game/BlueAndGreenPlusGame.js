@@ -6,7 +6,7 @@ import ImageRendererComponent from "enjine/src/js/enjine/components/renderer-com
 import TileComponent from "../Components/TileComponent";
 import CircleRendererComponent from "enjine/src/js/enjine/components/renderer-components/CircleRendererComponent";
 import MovingStarComponent from "../Components/MovingStarComponent";
-import {BackgroundSize, DefaultTileColor, FullTileSize, StarCount, TileMargin} from "../defines";
+import {BackgroundSize, BasePlayerSize, DefaultTileColor, FullTileSize, StarCount, TileMargin} from "../defines";
 import World from "enjine/src/js/enjine/ecs/World";
 import CanvasRendererSystem from "enjine/src/js/enjine/systems/CanvasRendererSystem";
 import CameraComponent from "enjine/src/js/enjine/components/CameraComponent";
@@ -16,7 +16,9 @@ import MovingStarSystem from "../Systems/MovingStarSystem";
 import {addListener} from "enjine/src/js/enjine/events";
 import InputManager, {INPUT_CODES} from "enjine/src/js/enjine/managers/InputManager";
 import SquareRendererComponent from "enjine/src/js/enjine/components/renderer-components/SquareRendererComponent";
-import {createTile} from "../entity-helpers";
+import {createPlayerPiece, createTile} from "../entity-helpers";
+import PlayerPieceComponent from "../Components/PlayerPieceComponent";
+import PlayerPieceSystem from "../Systems/PlayerPieceSystem";
 
 export default class BlueAndGreenPlusGame extends Game {
 
@@ -27,6 +29,7 @@ export default class BlueAndGreenPlusGame extends Game {
     #cursorTileCoordinate = new Vector(1, 2);
 
     tiles = {};
+    playerPieces = {};
 
     currentPlayer = 0;
     gameOver = true;
@@ -39,6 +42,7 @@ export default class BlueAndGreenPlusGame extends Game {
         this.#setupInput();
         this.#createBackgroundStars();
         this.#createTiles();
+        this.#createPlayerPieces();
         this.#setupRestart();
         this.#updateZoom();
 
@@ -153,6 +157,7 @@ export default class BlueAndGreenPlusGame extends Game {
         world.addSystem(simpleTickSystem);
         world.addSystem(new TileSystem);
         world.addSystem(new MovingStarSystem);
+        world.addSystem(new PlayerPieceSystem);
 
         world.addSystem(canvasRendererSystem);
         this.world = world;
@@ -161,8 +166,23 @@ export default class BlueAndGreenPlusGame extends Game {
         this.#canvas = this.world.getSystem(CanvasRendererSystem).canvas;
     }
 
+    /**
+     * Sort the entities of the render system once off by their z-index. In the future this would be handled
+     * by the renderer directly, but we can do it once-off here for this experiment.
+     */
+    #sortEntitiesByZ() {
+        const renderer = this.world.getSystem(CanvasRendererSystem);
+        renderer.queries.forEach(query => {
+            query.entities = query.entities.sort((a, b) => {
+                const aTransform = a.getComponent(TransformComponent);
+                const bTransform = b.getComponent(TransformComponent);
+                return aTransform.zIndex - bTransform.zIndex;
+            });
+        });
+    }
+
     #updateZoom() {
-        const boardSize = FullTileSize * 3 + TileMargin * 2;
+        const boardSize = FullTileSize * 5 + TileMargin * 2;
         //set camera zoom based on canvas size
         const canvas = this.#canvas;
         const camera = this.#WorldCameraComponent;
@@ -182,10 +202,18 @@ export default class BlueAndGreenPlusGame extends Game {
                 this.tiles[i].getComponent(TileComponent).take(null);
             }
 
+            Object.entries(this.playerPieces).forEach(entry => {
+                entry[1].forEach(piece => {
+                    piece.tile = null;
+                });
+            });
+
             this.gameOver = false;
             this.dispatchData('game-over', {
                 winState: false
             });
+
+            this.#publishCurrentPlayer();
         })
     }
 
@@ -227,8 +255,30 @@ export default class BlueAndGreenPlusGame extends Game {
         Object.entries(this.tiles).forEach(([key, tile]) => {
             this.tiles[index++] = tile;
         });
+    }
 
-        console.log('tiles', this.tiles);
+    #createPlayerPieces() {
+        //6 pieces for each player, 3 large 3 small
+        for (let player = 0; player <= 1; player++) {
+            this.playerPieces[player] = [];
+            for (let i = 0; i < 6; i++) {
+                const size = BasePlayerSize * (i < 3 ? 1 : 0.75);
+
+                const coord = [
+                    -FullTileSize * 2 * (player === 0 ? 1 : -1), //flip side based on player
+                    FullTileSize - (FullTileSize / 3 * i), //from top left plus half increments
+                    size //we'll use size on Z for sorting
+                ];
+                const piece = createPlayerPiece(this.world, player, ...coord);
+                //halve the size for the latter 3
+                const pieceComponent = piece.getComponent(PlayerPieceComponent);
+                pieceComponent.size = size;
+                pieceComponent.rememberStartPosition();
+
+                this.playerPieces[player].push(pieceComponent);
+            }
+        }
+        console.log('all player pieces', this.playerPieces);
     }
 
     #setupInput() {
@@ -272,7 +322,10 @@ export default class BlueAndGreenPlusGame extends Game {
         }
 
         //try take the tile
-        tile.take(this.currentPlayer);
+        if (!tile.take(this.currentPlayer, this.playerPieces[this.currentPlayer])) {
+            //take was unsuccessful...
+            return;
+        }
 
         if (this.foundWinState()) {
             console.log('winner is', this.currentPlayer);
