@@ -166,21 +166,6 @@ export default class BlueAndGreenPlusGame extends Game {
         this.#canvas = this.world.getSystem(CanvasRendererSystem).canvas;
     }
 
-    /**
-     * Sort the entities of the render system once off by their z-index. In the future this would be handled
-     * by the renderer directly, but we can do it once-off here for this experiment.
-     */
-    #sortEntitiesByZ() {
-        const renderer = this.world.getSystem(CanvasRendererSystem);
-        renderer.queries.forEach(query => {
-            query.entities = query.entities.sort((a, b) => {
-                const aTransform = a.getComponent(TransformComponent);
-                const bTransform = b.getComponent(TransformComponent);
-                return aTransform.zIndex - bTransform.zIndex;
-            });
-        });
-    }
-
     #updateZoom() {
         const boardSize = FullTileSize * 5 + TileMargin * 2;
         //set camera zoom based on canvas size
